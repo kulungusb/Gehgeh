@@ -21,7 +21,9 @@
       padding: 20px;
       box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
       color: white;
+      display: none;
     }
+    .id-card.active { display: block; }
     .logo {
       text-align: center;
       font-size: 22px;
@@ -53,8 +55,8 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: none;
     }
+    #photoPreview { display: none; }
     .delete-photo {
       position: absolute;
       bottom: 2px;
@@ -134,12 +136,11 @@
       margin-top: 15px;
       display: none;
     }
-    #confirmPage { display: none; }
   </style>
 </head>
 <body>
-  <!-- FORM PAGE -->
-  <div class="id-card" id="formPage">
+  <!-- PAGE 1: FORM -->
+  <div class="id-card active" id="formPage">
     <form id="idForm">
       <div class="logo">🎓 GehGeh</div>
       <div class="university">University of Wisdom and Understanding</div>
@@ -152,19 +153,19 @@
       </div>
       <input type="file" id="photoInput" accept="image/*">
 
-      <div class="details"><span>Name:</span> <input type="text" id="name" class="box" placeholder="Enter Name" required></div>
-      <div class="details"><span>Other Names:</span> <input type="text" id="otherNames" class="box" placeholder="Enter Other Names" required></div>
+      <div class="details"><span>Name:</span> <input type="text" id="name" class="box" required></div>
+      <div class="details"><span>Other Names:</span> <input type="text" id="otherNames" class="box" required></div>
       <div class="details"><span>ID No:</span> <input type="text" id="idNumber" class="readonly-box" readonly></div>
-      <div class="details"><span>Level:</span> <input type="text" id="level" class="box" placeholder="Enter Level" required></div>
-      <div class="details"><span>Department:</span> <input type="text" id="department" class="box" placeholder="Enter Dept" required></div>
-      <div class="details"><span>Year of Admission:</span> <input type="text" id="admission" class="box" placeholder="e.g. 2025" required></div>
-      <div class="details"><span>Expiry Date:</span> <input type="text" id="expiry" class="box" placeholder="e.g. 2029" required></div>
+      <div class="details"><span>Level:</span> <input type="text" id="level" class="box" required></div>
+      <div class="details"><span>Department:</span> <input type="text" id="department" class="box" required></div>
+      <div class="details"><span>Year of Admission:</span> <input type="text" id="admission" class="box" required></div>
+      <div class="details"><span>Expiry Date:</span> <input type="text" id="expiry" class="box" required></div>
 
       <button type="submit" class="submit-btn">Submit</button>
     </form>
   </div>
 
-  <!-- CONFIRMATION PAGE -->
+  <!-- PAGE 2: CONFIRMATION -->
   <div class="id-card" id="confirmPage">
     <div class="logo">🎓 GehGeh</div>
     <div class="university">University of Wisdom and Understanding</div>
@@ -191,7 +192,34 @@
 
     <button id="backBtn" class="back-btn">⬅ Go Back</button>
     <button id="confirmBtn" class="confirm-btn">✅ Confirm</button>
-    <div class="success-message" id="successMsg">✅ Submitted Successfully!</div>
+  </div>
+
+  <!-- PAGE 3: FINAL ID CARD -->
+  <div class="id-card" id="finalPage">
+    <div class="logo">🎓 GehGeh</div>
+    <div class="university">University of Wisdom and Understanding</div>
+
+    <div class="photo">
+      <img id="finalPhoto" alt="Student Photo">
+    </div>
+
+    <div class="details"><span>Name:</span> <span id="finalName"></span></div>
+    <div class="details"><span>Other Names:</span> <span id="finalOtherNames"></span></div>
+    <div class="details"><span>ID No:</span> <span id="finalId"></span></div>
+    <div class="details"><span>Level:</span> <span id="finalLevel"></span></div>
+    <div class="details"><span>Department:</span> <span id="finalDepartment"></span></div>
+    <div class="details"><span>Year of Admission:</span> <span id="finalAdmission"></span></div>
+    <div class="details"><span>Expiry Date:</span> <span id="finalExpiry"></span></div>
+
+    <div class="bottom-row">
+      <div class="signature">
+        Registrar
+        <div class="signature-line"></div>
+      </div>
+      <div class="qr"><canvas id="qrCodeFinal"></canvas></div>
+    </div>
+
+    <div class="success-message" id="successMsg">✅ Registration Completed!</div>
   </div>
 
   <script>
@@ -203,11 +231,16 @@
     }
     document.getElementById("idNumber").value = generateID();
 
-    // Setup QR
+    // Setup QR placeholders
     let qr = new QRious({
       element: document.getElementById("qrCode"),
       size: 90,
-      value: window.location.href
+      value: "Student ID"
+    });
+    let qrFinal = new QRious({
+      element: document.getElementById("qrCodeFinal"),
+      size: 90,
+      value: "Student ID"
     });
 
     // Photo upload
@@ -217,6 +250,7 @@
     const photoText = document.getElementById("photoText");
     const deletePhoto = document.getElementById("deletePhoto");
     const confirmPhoto = document.getElementById("confirmPhoto");
+    const finalPhoto = document.getElementById("finalPhoto");
 
     photoBox.addEventListener("click", () => { photoInput.click(); });
 
@@ -242,7 +276,7 @@
       deletePhoto.style.display = "none";
     });
 
-    // Handle form submission → go to confirm page
+    // Handle form submission → confirmation
     document.getElementById("idForm").addEventListener("submit", function(e) {
       e.preventDefault();
 
@@ -256,22 +290,38 @@
       document.getElementById("confirmExpiry").innerText = document.getElementById("expiry").value;
       confirmPhoto.src = photoPreview.src;
 
-      // Show confirm page
-      document.getElementById("formPage").style.display = "none";
-      document.getElementById("confirmPage").style.display = "block";
+      // Update QR code
+      qr.value = "ID: " + document.getElementById("idNumber").value;
+
+      // Switch page
+      document.getElementById("formPage").classList.remove("active");
+      document.getElementById("confirmPage").classList.add("active");
     });
 
     // Go back to edit form
     document.getElementById("backBtn").addEventListener("click", function() {
-      document.getElementById("confirmPage").style.display = "none";
-      document.getElementById("formPage").style.display = "block";
+      document.getElementById("confirmPage").classList.remove("active");
+      document.getElementById("formPage").classList.add("active");
     });
 
-    // Final confirm
+    // Final confirm → show issued ID card
     document.getElementById("confirmBtn").addEventListener("click", function() {
+      document.getElementById("finalName").innerText = document.getElementById("name").value;
+      document.getElementById("finalOtherNames").innerText = document.getElementById("otherNames").value;
+      document.getElementById("finalId").innerText = document.getElementById("idNumber").value;
+      document.getElementById("finalLevel").innerText = document.getElementById("level").value;
+      document.getElementById("finalDepartment").innerText = document.getElementById("department").value;
+      document.getElementById("finalAdmission").innerText = document.getElementById("admission").value;
+      document.getElementById("finalExpiry").innerText = document.getElementById("expiry").value;
+      finalPhoto.src = photoPreview.src;
+
+      // Update final QR code
+      qrFinal.value = "ID: " + document.getElementById("idNumber").value;
+
+      // Switch page
+      document.getElementById("confirmPage").classList.remove("active");
+      document.getElementById("finalPage").classList.add("active");
       document.getElementById("successMsg").style.display = "block";
-      document.getElementById("confirmBtn").disabled = true;
-      document.getElementById("backBtn").disabled = true;
     });
   </script>
 </body>
